@@ -13,8 +13,8 @@ using namespace cv;
 int main(int argc, char** argv)
 {
 
-	const char* filename = argc >= 2 ? argv[1] : "hello.jpg";
-	Mat src = imread(filename,0);
+	const char* filename = argc >= 2 ? argv[1] : "bat.jpg";
+	Mat src = imread(filename,1);
 	if(src.empty())
 	{
 		cout << "can not open " << filename << endl;
@@ -27,8 +27,6 @@ int main(int argc, char** argv)
 	int width = src.cols;
 	int height = src.rows;
 	src.copyTo(dst);
-
-	float alpha = 1.2;
 
 		int n = 1;
 		float sigma = 1;
@@ -70,7 +68,7 @@ int main(int argc, char** argv)
 		{
 			for (int col = 0; col < width ; col++)
 			{
-				float sum = 0;
+				float sumR = 0, sumG = 0, sumB = 0;
 				for (int subrow = -n ; subrow <= n ; subrow++)
 				{
 					for (int subcol = -n; subcol <= n; subcol++ )
@@ -78,24 +76,61 @@ int main(int argc, char** argv)
 						int newrow = row + subrow;
 						int newcol = col + subcol;
 
-					if(newrow < 0 || newrow >= height)  
-					{   
-						newrow = row;   
-					}   
-					if(newcol < 0 || newcol >= width)  
-					{   
-						newcol = col;   
-					}   
+						//if(newrow < 0 || newrow >= height)  
+						//{   
+						//	newrow = row;   
+						//}   
+						//if(newcol < 0 || newcol >= width)  
+						//{   
+						//	newcol = col;   
+						//}   
+						if (newrow<0)
+						{
+							newrow *= -1;
+						}
+						if (newrow>=height)
+						{
+							newrow = (height -1) - (newrow - (height - 1));
+						}  
 
-						sum += src.at<uchar>(newrow,newcol) * kernalArr[subrow+n][subcol+n];
+						if (newcol<0)
+						{
+							newcol *= -1;
+						}
+						if (newcol>=width)
+						{
+							newcol = (width -1) - (newcol - (width - 1));
+						} 
+
+						if (src.channels() == 1)
+						{
+							sumR += src.at<uchar>(newrow,newcol) * kernalArr[subrow+n][subcol+n];
+						}
+						else
+						{
+							sumR += src.at<Vec3b>(newrow,newcol)[2] * kernalArr[subrow+n][subcol+n];
+							sumG += src.at<Vec3b>(newrow,newcol)[1] * kernalArr[subrow+n][subcol+n];
+							sumB += src.at<Vec3b>(newrow,newcol)[0] * kernalArr[subrow+n][subcol+n];
+
+						}
 					}
 				}
-				dst.at<uchar>(row,col) = sum + alpha*src.at<uchar>(row,col);
+				if (src.channels() == 1)
+				{
+					dst.at<uchar>(row,col) = sumR; //- src.at<uchar>(row,col);
+				}
+				else
+				{
+					dst.at<Vec3b>(row,col)[2] = sumR; //- src.at<uchar>(row,col);
+					dst.at<Vec3b>(row,col)[1] = sumG; //- src.at<uchar>(row,col);
+					dst.at<Vec3b>(row,col)[0] = sumB; //- src.at<uchar>(row,col);
+
+				}
 			}
 		}
 
 	namedWindow("hello2");
-	imshow("hello2",dst);
+	imshow("hello2",dst + src);
 	waitKey(0);
 	return 0;
 }
